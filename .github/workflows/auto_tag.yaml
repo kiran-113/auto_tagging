@@ -1,4 +1,4 @@
-name: Tag Release on Changes in Modules
+name: Tag Release on Changes in module
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check changes in modules directory
+      - name: Check changes in module directory
         id: changes-check
         run: |
           # Fetch the previous commit on main branch
@@ -25,16 +25,16 @@ jobs:
           # Get the most recent two commits to compare
           PREV_COMMIT=$(git rev-parse HEAD^)
           CURR_COMMIT=$(git rev-parse HEAD)
-          # Check the difference in the modules directory
-          if git diff --quiet $PREV_COMMIT $CURR_COMMIT -- modules; then
-            echo "modules_changed=false" >> $GITHUB_ENV
+          # Check the difference in the module directory
+          if git diff --quiet $PREV_COMMIT $CURR_COMMIT -- module; then
+            echo "module_changed=false" >> $GITHUB_ENV
           else
-            echo "modules_changed=true" >> $GITHUB_ENV
+            echo "module_changed=true" >> $GITHUB_ENV
           fi
 
       - name: Calculate new tag version
         id: calc-tag
-        if: env.modules_changed == 'true'
+        if: env.module_changed == 'true'
         run: |
           # Fetch all tags
           git fetch --tags
@@ -67,7 +67,7 @@ jobs:
           echo "new_tag=$newTag" >> $GITHUB_ENV
 
       - name: Create the new tag
-        if: env.modules_changed == 'true'
+        if: env.module_changed == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
