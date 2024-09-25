@@ -1,0 +1,12 @@
+This file is created at consone
+
+created new branch
+
+
+git merge form terminal
+
+git clone
+
+git checkout -b branchname
+
+git add .   or git add filename

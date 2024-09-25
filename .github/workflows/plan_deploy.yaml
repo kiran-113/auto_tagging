@@ -1,0 +1,64 @@
+name: Tag Release on Changes in Modules
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check changes in modules directory
+        id: changes-check
+        run: |
+          git fetch origin master --depth=1
+          git diff --quiet HEAD^ HEAD modules || echo "changes=true" >> $GITHUB_ENV
+
+      - name: Calculate new tag version
+        id: calc-tag
+        if: env.changes == 'true'
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Get the latest tag from the repository
+          latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          
+          # Default to v1.2.1 if no tag exists
+          if [ -z "$latestTag" ]; then
+            echo "new_tag=v1.2.1" >> $GITHUB_ENV
+            exit 0
+          fi
+          
+          # Extract the main, minor, and patch version numbers
+          latestVersion=${latestTag#v}
+          main=${latestVersion%%.*}
+          minor=${latestVersion#*.}
+          minor=${minor%.*}
+          patch=${latestVersion##*.}
+
+          if [ "$patch" -lt 99 ]; then
+            patch=$((patch + 1))
+          else
+            patch=0
+            minor=$((minor + 1))
+          fi
+
+          newTag="v$main.$minor.$patch"
+
+          echo "new_tag=$newTag" >> $GITHUB_ENV
+
+      - name: Create the new tag
+        if: env.changes == 'true'
+        run: |
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
