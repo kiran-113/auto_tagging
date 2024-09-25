@@ -1,15 +1,15 @@
-## GitHub Actions workflow that automatically tags a repository when changes are detected in the `modules` directory:
+## GitHub Actions workflow that automatically tags a repository when changes are detected in the `module` directory:
 
 ---
 
 # Auto Tagging GitHub Workflow
 
-This repository contains a GitHub Actions workflow designed to automatically create and push a version tag whenever changes are detected in the `modules` directory upon a push to the `main` branch. This tagging system starts at version `v1.2.1` and increments the patch number until `v1.2.99`, after which it increments the minor version.
+This repository contains a GitHub Actions workflow designed to automatically create and push a version tag whenever changes are detected in the `module` directory upon a push to the `main` branch. This tagging system starts at version `v1.2.1` and increments the patch number until `v1.2.99`, after which it increments the minor version.
 
 ## Workflow Details
 
 - **Trigger:** The workflow is triggered on a push to the `main` branch.
-- **Change Detection:** It checks for changes specifically within the `modules` directory.
+- **Change Detection:** It checks for changes specifically within the `module` directory.
 - **Versioning:** 
   - It starts at `v1.2.1`.
   - Increases the patch version up to `v1.2.99`.
@@ -26,7 +26,7 @@ This repository contains a GitHub Actions workflow designed to automatically cre
 ## Usage
 
 1. **Setup:** Ensure your repository is set up with the default branch as `main` and has the required permissions configured.
-2. **Edit and Commit:** Make modifications to the `modules` directory.
+2. **Edit and Commit:** Make modifications to the `module` directory.
 3. **Push Changes:** Push your changes to the `main` branch.
 4. **Auto Tagging:** Upon detecting changes, the workflow automatically increments the version number, creates a new tag, and pushes it to the repository.
 
