@@ -20,12 +20,21 @@ jobs:
       - name: Check changes in modules directory
         id: changes-check
         run: |
-          git fetch origin main --depth=1
-          git diff --quiet HEAD^ HEAD modules || echo "changes=true" >> $GITHUB_ENV
+          # Fetch the previous commit on main branch
+          git fetch origin main --depth=2
+          # Get the most recent two commits to compare
+          PREV_COMMIT=$(git rev-parse HEAD^)
+          CURR_COMMIT=$(git rev-parse HEAD)
+          # Check the difference in the modules directory
+          if git diff --quiet $PREV_COMMIT $CURR_COMMIT -- modules; then
+            echo "modules_changed=false" >> $GITHUB_ENV
+          else
+            echo "modules_changed=true" >> $GITHUB_ENV
+          fi
 
       - name: Calculate new tag version
         id: calc-tag
-        if: env.changes == 'true'
+        if: env.modules_changed == 'true'
         run: |
           # Fetch all tags
           git fetch --tags
@@ -58,9 +67,9 @@ jobs:
           echo "new_tag=$newTag" >> $GITHUB_ENV
 
       - name: Create the new tag
-        if: env.changes == 'true'
+        if: env.modules_changed == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git tag ${{ env.new_tag }}
-          git push origin ${{ env.new_tag }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git ${{ env.new_tag }}
