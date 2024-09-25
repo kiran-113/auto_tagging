@@ -20,7 +20,7 @@ jobs:
       - name: Check changes in modules directory
         id: changes-check
         run: |
-          git fetch origin master --depth=1
+          git fetch origin main --depth=1
           git diff --quiet HEAD^ HEAD modules || echo "changes=true" >> $GITHUB_ENV
 
       - name: Calculate new tag version
