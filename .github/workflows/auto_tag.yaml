@@ -32,44 +32,167 @@ jobs:
             echo "module_changed=true" >> $GITHUB_ENV
           fi
 
-      - name: Calculate new tag version
+      - name: Calculate new tag versions
         id: calc-tag
         if: env.module_changed == 'true'
         run: |
           # Fetch all tags
           git fetch --tags
-          
-          # Get the latest tag from the repository
-          latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          
-          # Default to v1.2.1 if no tag exists
+
+          # Get the latest tag from the repository (for normal tags)
+          latestTag=$(git describe --tags `git rev-list --tags --max-count=1 --match "v[0-9]*"`)
+
+          # Default to v1.2.1 if no tag exists for regular tags
           if [ -z "$latestTag" ]; then
-            echo "new_tag=v1.2.1" >> $GITHUB_ENV
-            exit 0
-          fi
-          
-          # Extract the main, minor, and patch version numbers
-          latestVersion=${latestTag#v}
-          main=${latestVersion%%.*}
-          minor=${latestVersion#*.}
-          minor=${minor%.*}
-          patch=${latestVersion##*.}
-
-          if [ "$patch" -lt 99 ]; then
-            patch=$((patch + 1))
+            new_tag="v1.2.1"
           else
-            patch=0
-            minor=$((minor + 1))
+            # Extract the main, minor, and patch version numbers
+            latestVersion=${latestTag#v}
+            main=${latestVersion%%.*}
+            minor=${latestVersion#*.}
+            minor=${minor%.*}
+            patch=${latestVersion##*.}
+
+            if [ "$patch" -lt 99 ]; then
+              patch=$((patch + 1))
+            else
+              patch=0
+              minor=$((minor + 1))
+            fi
+
+            new_tag="v$main.$minor.$patch"
           fi
 
-          newTag="v$main.$minor.$patch"
+          echo "new_tag=$new_tag" >> $GITHUB_ENV
 
-          echo "new_tag=$newTag" >> $GITHUB_ENV
+          # Get the latest -prod tag
+          latestProdTag=$(git describe --tags `git rev-list --tags --max-count=1 --match "v[0-9]*-prod"`)
 
-      - name: Create the new tag
+          # Default to v1.1.1-prod if no -prod tag exists
+          if [ -z "$latestProdTag" ]; then
+            new_prod_tag="v1.1.1-prod"
+          else
+            # Extract the main, minor, and patch version numbers for the prod tag
+            prodVersion=${latestProdTag%-prod}
+            prodVersion=${prodVersion#v}
+            main=${prodVersion%%.*}
+            minor=${prodVersion#*.}
+            minor=${minor%.*}
+            patch=${prodVersion##*.}
+
+            if [ "$patch" -lt 99 ]; then
+              patch=$((patch + 1))
+            else
+              patch=0
+              minor=$((minor + 1))
+            fi
+
+            new_prod_tag="v$main.$minor.$patch-prod"
+          fi
+
+          echo "new_prod_tag=$new_prod_tag" >> $GITHUB_ENV
+
+      - name: Create the new tags
         if: env.module_changed == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Create and push both tags
           git tag ${{ env.new_tag }}
+          git tag ${{ env.new_prod_tag }}
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git ${{ env.new_tag }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git ${{ env.new_prod_tag }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# name: Tag Release on Changes in module
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   tag-release:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Git
+#         run: |
+#           git config user.name "github-actions[bot]"
+#           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+#       - name: Check changes in module directory
+#         id: changes-check
+#         run: |
+#           # Fetch the previous commit on main branch
+#           git fetch origin main --depth=2
+#           # Get the most recent two commits to compare
+#           PREV_COMMIT=$(git rev-parse HEAD^)
+#           CURR_COMMIT=$(git rev-parse HEAD)
+#           # Check the difference in the module directory
+#           if git diff --quiet $PREV_COMMIT $CURR_COMMIT -- module; then
+#             echo "module_changed=false" >> $GITHUB_ENV
+#           else
+#             echo "module_changed=true" >> $GITHUB_ENV
+#           fi
+
+#       - name: Calculate new tag version
+#         id: calc-tag
+#         if: env.module_changed == 'true'
+#         run: |
+#           # Fetch all tags
+#           git fetch --tags
+
+#           # Get the latest tag from the repository
+#           latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+
+#           # Default to v1.2.1 if no tag exists
+#           if [ -z "$latestTag" ]; then
+#             echo "new_tag=v1.2.1" >> $GITHUB_ENV
+#             exit 0
+#           fi
+
+#           # Extract the main, minor, and patch version numbers
+#           latestVersion=${latestTag#v}
+#           main=${latestVersion%%.*}
+#           minor=${latestVersion#*.}
+#           minor=${minor%.*}
+#           patch=${latestVersion##*.}
+
+#           if [ "$patch" -lt 99 ]; then
+#             patch=$((patch + 1))
+#           else
+#             patch=0
+#             minor=$((minor + 1))
+#           fi
+
+#           newTag="v$main.$minor.$patch"
+
+#           echo "new_tag=$newTag" >> $GITHUB_ENV
+
+#       - name: Create the new tag
+#         if: env.module_changed == 'true'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         run: |
+#           git tag ${{ env.new_tag }}
+#           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git ${{ env.new_tag }}
